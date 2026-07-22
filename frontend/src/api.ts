@@ -28,6 +28,12 @@ export const api = {
   network:       (crimeType?: string)                      => fetchJSON<any>('/network', crimeType ? { crime_type: crimeType } : undefined),
   offenders:     (filters?: Record<string, any>)           => fetchJSON<any[]>('/network/offenders', filters),
   offenderDetail:(id: string)                              => fetchJSON<any>(`/network/offenders/${id}`),
+  analyzeWithAI: (prompt: string, district?: string, apiKey?: string) => 
+    fetch('http://localhost:8000/api/ai/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, district, api_key: apiKey }),
+    }).then(res => res.json()),
 };
 
 export function getRiskColor(score: number): string {

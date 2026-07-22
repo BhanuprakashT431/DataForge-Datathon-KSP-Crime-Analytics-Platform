@@ -123,7 +123,7 @@ export const LandingNavbar: React.FC = () => {
 
           {/* Portal Launch Button */}
           <Link
-            to="/dashboard"
+            to="/auth"
             style={{
               padding: '10px 18px',
               borderRadius: 10,

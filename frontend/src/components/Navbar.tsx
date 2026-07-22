@@ -1,9 +1,9 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const NAV_ITEMS = [
-  { path: '/',                icon: '🏠', label: 'Landing Page',     desc: 'Overview & Info' },
   { path: '/dashboard',        icon: '📊', label: 'Dashboard',        desc: 'Overview & KPIs' },
   { path: '/map',             icon: '📍', label: 'Crime Map',         desc: 'Geospatial Hotspots' },
   { path: '/network',         icon: '⬡', label: 'Network Analysis',  desc: 'Criminal Links' },
@@ -13,7 +13,18 @@ const NAV_ITEMS = [
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/auth');
+    } catch (e) {
+      console.error('Logout error', e);
+    }
+  };
 
   return (
     <nav style={{
@@ -26,10 +37,10 @@ export const Navbar: React.FC = () => {
     }}>
       {/* Logo */}
       <div style={{
-        padding: '24px 20px 20px',
+        padding: '20px 18px 16px',
         borderBottom: '1px solid var(--border-glass)',
       }}>
-        <NavLink to="/" style={{ textDecoration: 'none' }}>
+        <NavLink to="/dashboard" style={{ textDecoration: 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
             <div style={{
               width: 36, height: 36, borderRadius: 10,
@@ -49,7 +60,7 @@ export const Navbar: React.FC = () => {
           </div>
         </NavLink>
         <div style={{
-          marginTop: 12,
+          marginTop: 10,
           padding: '6px 10px',
           background: 'rgba(34, 197, 94, 0.08)',
           border: '1px solid rgba(34, 197, 94, 0.2)',
@@ -68,7 +79,7 @@ export const Navbar: React.FC = () => {
       {/* Nav Links */}
       <div style={{ flex: 1, padding: '12px 10px', overflowY: 'auto' }}>
         <div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '1px', padding: '8px 10px 4px', fontWeight: 600 }}>
-          PLATFORM MODULES
+          COMMAND CENTER
         </div>
         {NAV_ITEMS.map((item) => {
           const isActive = location.pathname === item.path;
@@ -113,44 +124,102 @@ export const Navbar: React.FC = () => {
         })}
       </div>
 
-      {/* Footer & Theme Switcher */}
+      {/* User Profile Card & Actions */}
       <div style={{
-        padding: '16px 14px',
+        padding: '14px',
         borderTop: '1px solid var(--border-glass)',
-        fontSize: 11, color: 'var(--text-muted)',
+        background: 'rgba(9, 14, 26, 0.4)',
       }}>
-        {/* Theme Switcher Button */}
-        <button
-          onClick={toggleTheme}
-          style={{
-            width: '100%',
-            padding: '8px 12px',
-            borderRadius: 8,
+        {/* User Card */}
+        {user && (
+          <div style={{
             background: 'var(--bg-card)',
             border: '1px solid var(--border-glass)',
-            color: 'var(--text-primary)',
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: 'pointer',
+            borderRadius: 10,
+            padding: '10px 12px',
+            marginBottom: 10,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            marginBottom: 12,
-            transition: 'all 0.2s ease',
-          }}
-        >
-          <span>{theme === 'dark' ? '☀️ Light Theme' : '🌙 Dark Theme'}</span>
-        </button>
+            gap: 10,
+          }}>
+            <div style={{
+              width: 34, height: 34, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#ffffff', fontWeight: 700, fontSize: 14,
+              flexShrink: 0,
+            }}>
+              {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+            </div>
+            <div style={{ overflow: 'hidden', flex: 1 }}>
+              <div style={{
+                fontSize: 12, fontWeight: 700, color: 'var(--text-primary)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>
+                {user.name || 'Police Officer'}
+              </div>
+              <div style={{
+                fontSize: 10, color: 'var(--text-muted)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>
+                {user.email}
+              </div>
+            </div>
+          </div>
+        )}
 
-        <div style={{ fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>
-          Karnataka State Police
-        </div>
-        <div>State Crime Records Bureau</div>
-        <div style={{ marginTop: 4, color: 'var(--text-muted)' }}>
-          © 2026 KSP SCRB Platform
+        <div style={{ display: 'flex', gap: 6 }}>
+          {/* Theme Switcher Button */}
+          <button
+            onClick={toggleTheme}
+            title="Toggle theme"
+            style={{
+              flex: 1,
+              padding: '8px',
+              borderRadius: 8,
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-glass)',
+              color: 'var(--text-primary)',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 4,
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <span>{theme === 'dark' ? '☀️' : '🌙'}</span>
+          </button>
+
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            title="Sign out of account"
+            style={{
+              flex: 2,
+              padding: '8px 12px',
+              borderRadius: 8,
+              background: 'rgba(244, 63, 94, 0.12)',
+              border: '1px solid rgba(244, 63, 94, 0.3)',
+              color: '#fda4af',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <span>🚪</span>
+            <span>Sign Out</span>
+          </button>
         </div>
       </div>
     </nav>
   );
 };
+
