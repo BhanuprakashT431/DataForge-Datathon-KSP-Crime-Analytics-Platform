@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { PoliceBadge } from './PoliceBadge';
 
 export const LandingNavbar: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
@@ -40,7 +41,7 @@ export const LandingNavbar: React.FC = () => {
             fontSize: 20,
             flexShrink: 0,
           }}>
-            🛡️
+            <PoliceBadge size={24} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <div style={{

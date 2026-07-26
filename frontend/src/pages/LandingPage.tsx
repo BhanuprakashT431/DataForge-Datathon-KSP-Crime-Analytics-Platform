@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LandingNavbar } from '../components/LandingNavbar';
 import { useTheme } from '../context/ThemeContext';
+import { HeroBackground } from '../components/HeroBackground';
+import { PoliceBadge } from '../components/PoliceBadge';
 
 export const LandingPage: React.FC = () => {
   const { theme } = useTheme();
@@ -18,6 +20,9 @@ export const LandingPage: React.FC = () => {
     }}>
       {/* Top Navbar */}
       <LandingNavbar />
+      
+      {/* Background Animation */}
+      <HeroBackground />
 
       {/* ─── Hero Section ────────────────────────────────────────────────────────── */}
       <section id="overview" style={{
@@ -25,6 +30,7 @@ export const LandingPage: React.FC = () => {
         padding: '70px 24px 90px',
         maxWidth: 1280,
         margin: '0 auto',
+        zIndex: 1,
       }}>
         {/* Ambient Glow Effects */}
         <div style={{
@@ -52,7 +58,7 @@ export const LandingPage: React.FC = () => {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 56, alignItems: 'center' }}>
           {/* Left Column: Headline & Action */}
-          <div>
+          <div className="glass-reveal">
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -173,7 +179,7 @@ export const LandingPage: React.FC = () => {
           </div>
 
           {/* Right Column: Hero Visual Card */}
-          <div className="animate-float" style={{ position: 'relative' }}>
+          <div className="animate-float glass-reveal" style={{ position: 'relative', animationDelay: '0.2s' }}>
             <div style={{
               background: 'var(--gradient-card)',
               border: '1px solid var(--border-glow)',
@@ -351,7 +357,7 @@ export const LandingPage: React.FC = () => {
         maxWidth: 1280,
         margin: '0 auto',
       }}>
-        <div style={{ textAlign: 'center', maxWidth: 700, margin: '0 auto 50px' }}>
+        <div className="glass-reveal" style={{ textAlign: 'center', maxWidth: 700, margin: '0 auto 50px', animationDelay: '0.3s' }}>
           <div style={{
             fontSize: 11,
             fontWeight: 800,
@@ -443,11 +449,12 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* ─── Interactive Live Module Showcase ────────────────────────────────────── */}
-      <section id="modules" style={{
+      <section id="modules" className="glass-reveal" style={{
         padding: '80px 24px',
         background: 'var(--bg-secondary)',
         borderTop: '1px solid var(--border-glass)',
         borderBottom: '1px solid var(--border-glass)',
+        animationDelay: '0.4s'
       }}>
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 36 }}>
@@ -629,7 +636,8 @@ export const LandingPage: React.FC = () => {
         maxWidth: 1280,
         margin: '0 auto',
       }}>
-        <div style={{
+        <div className="glass-reveal" style={{
+          animationDelay: '0.5s',
           background: 'var(--gradient-card)',
           border: '1px solid var(--border-glow)',
           borderRadius: 24,
@@ -677,7 +685,9 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div style={{ textAlign: 'center', padding: 28, background: 'var(--bg-primary)', borderRadius: 20, border: '1px solid var(--border-glass)' }}>
-            <div style={{ fontSize: 48, marginBottom: 10 }}>🛡️</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+              <PoliceBadge size={54} />
+            </div>
             <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)' }}>
               Karnataka State Police Intelligence Division
             </div>

@@ -1,0 +1,35 @@
+{
+  "client": {
+    "source": "frontend/dist"
+  },
+  "app_sail": {
+    "source": "backend"
+  },
+  "functions": {
+    "source": [
+      "functions/report_generator",
+      "functions/audit_logging",
+      "functions/notification_processor",
+      "functions/analytics_refresh",
+      "functions/health_monitor"
+    ]
+  },
+  "signals": {
+    "functions": {
+      "audit_logging": [
+        {
+          "event": "DataStore.CaseMaster.Insert"
+        }
+      ]
+    }
+  },
+  "cron": {
+    "functions": {
+      "analytics_refresh": [
+        {
+          "schedule": "0 0 * * *"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "api_gateway": {
+    "name": "ksp-crime-intel-gateway",
+    "description": "API Gateway for KSP Strategic Crime Intelligence Platform",
+    "environments": ["Development", "Production"],
+    "routes": [
+      {
+        "path": "/api/*",
+        "method": "ANY",
+        "target": "AppSail",
+        "service_name": "KSP_Crime_Intel_Backend",
+        "authentication": {
+          "enabled": true,
+          "type": "Catalyst_Authentication",
+          "allowed_roles": ["officer", "admin", "superadmin"]
+        },
+        "rate_limit": {
+          "enabled": true,
+          "max_requests": 100,
+          "window_in_seconds": 60
+        },
+        "cors": {
+          "enabled": true,
+          "allow_origins": ["*"]
+        }
+      },
+      {
+        "path": "/serverless/*",
+        "method": "ANY",
+        "target": "Functions",
+        "authentication": {
+          "enabled": true,
+          "type": "Catalyst_Authentication",
+          "allowed_roles": ["admin"]
+        }
+      }
+    ]
+  },
+  "deployment_steps": [
+    "1. Open Zoho Catalyst Web Console.",
+    "2. Navigate to API Gateway under Discover.",
+    "3. Click 'Create API Gateway'.",
+    "4. Import this JSON or manually configure the routing rules above.",
+    "5. Ensure /api/* maps to your deployed AppSail service.",
+    "6. Enable Catalyst Authentication for the routes to block unauthorized access at the edge."
+  ]
+}

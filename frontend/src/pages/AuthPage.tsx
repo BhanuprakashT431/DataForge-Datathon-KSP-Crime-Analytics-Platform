@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { PoliceBadge } from '../components/PoliceBadge';
 
 type AuthMode = 'login' | 'register';
 type AuthMethod = 'firebase' | 'normal';
@@ -127,7 +129,7 @@ export const AuthPage: React.FC = () => {
       <div style={{ width: '100%', maxWidth: 460, padding: '0 20px', position: 'relative', zIndex: 1 }}>
 
         {/* Logo / Brand */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div className="glass-reveal" style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 60, height: 60, borderRadius: 16,
@@ -135,7 +137,7 @@ export const AuthPage: React.FC = () => {
             boxShadow: '0 8px 32px rgba(59,130,246,0.4)',
             marginBottom: 16,
           }}>
-            <span style={{ fontSize: 28 }}>🛡️</span>
+            <PoliceBadge size={36} />
           </div>
           <h1 style={{
             margin: 0, fontSize: 26, fontWeight: 800,
@@ -151,7 +153,8 @@ export const AuthPage: React.FC = () => {
         </div>
 
         {/* Card */}
-        <div style={{
+        <div className="glass-reveal" style={{
+          animationDelay: '0.15s',
           background: 'rgba(15, 23, 42, 0.8)',
           backdropFilter: 'blur(20px)',
           border: '1px solid rgba(56, 189, 248, 0.15)',
@@ -394,8 +397,8 @@ export const AuthPage: React.FC = () => {
         </div>
 
         {/* Footer note */}
-        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: 'var(--text-muted)' }}>
-          🔒 Secured connection · Karnataka State Police © 2025
+        <p className="glass-reveal" style={{ animationDelay: '0.3s', textAlign: 'center', marginTop: 20, fontSize: 12, color: 'var(--text-muted)' }}>
+          🔒 Secured connection · Karnataka State Police © 2026
         </p>
       </div>
 

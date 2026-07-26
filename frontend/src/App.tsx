@@ -10,8 +10,22 @@ import { GeospatialMap } from './pages/GeospatialMap';
 import { NetworkAnalysis } from './pages/NetworkAnalysis';
 import { Predictions } from './pages/Predictions';
 import { OffenderProfiles } from './pages/OffenderProfiles';
-
+import { Workspace } from './pages/Workspace';
+import { SecurityDashboard } from './pages/SecurityDashboard';
+import { AIGovernance } from './pages/AIGovernance';
+import { ModelMonitoring } from './pages/ModelMonitoring';
+import { SociologicalIntelligence } from './pages/SociologicalIntelligence';
+import { EvidenceRepository } from './pages/EvidenceRepository';
+import { DecisionSupportReports } from './pages/DecisionSupportReports';
+import { CommandCenter } from './pages/CommandCenter';
 import { GeminiChatbot } from './components/GeminiChatbot';
+
+// ─── Presentation Mode Context ────────────────────────────────
+export const PresentationContext = React.createContext({ 
+  isPresentation: false, 
+  setPresentation: (val: boolean) => {} 
+});
+export const usePresentation = () => React.useContext(PresentationContext);
 
 // ─── Protected Route wrapper ──────────────────────────────────
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -47,34 +61,52 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const AppContent: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
+  const { isPresentation } = usePresentation();
   const isLanding = location.pathname === '/';
   const isAuth = location.pathname === '/auth';
 
   // If on landing page
   if (isLanding) return <LandingPage />;
 
-  // If on auth page — redirect to dashboard if already logged in
+  // If on auth page — redirect to command-center if already logged in
   if (isAuth) {
-    return user ? <Navigate to="/dashboard" replace /> : <AuthPage />;
+    return user ? <Navigate to="/command-center" replace /> : <AuthPage />;
   }
 
   // All other routes are protected
   return (
     <ProtectedRoute>
-      <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)', transition: 'background-color 0.3s ease' }}>
-        <Navbar />
-        <main style={{ marginLeft: 240, flex: 1, minWidth: 0, paddingBottom: 40 }}>
+      <div style={{ 
+         display: 'flex', minHeight: '100vh', 
+         background: 'var(--bg-primary)', 
+         transition: 'background-color 0.3s ease',
+         fontSize: isPresentation ? '1.1rem' : '1rem' 
+      }}>
+        {!isPresentation && <Navbar />}
+        <main style={{ 
+           marginLeft: isPresentation ? 0 : 240, 
+           flex: 1, minWidth: 0, paddingBottom: 40,
+           padding: isPresentation ? '24px' : '0' 
+        }}>
           <Routes>
+            <Route path="/command-center" element={<CommandCenter />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/workspace" element={<Workspace />} />
             <Route path="/map" element={<GeospatialMap />} />
             <Route path="/network" element={<NetworkAnalysis />} />
             <Route path="/predictions" element={<Predictions />} />
             <Route path="/offenders" element={<OffenderProfiles />} />
+            <Route path="/evidence" element={<EvidenceRepository />} />
+            <Route path="/security" element={<SecurityDashboard />} />
+            <Route path="/ai-governance" element={<AIGovernance />} />
+            <Route path="/model-monitoring" element={<ModelMonitoring />} />
+            <Route path="/sociological" element={<SociologicalIntelligence />} />
+            <Route path="/reports" element={<DecisionSupportReports />} />
             {/* Fallback */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/command-center" replace />} />
           </Routes>
         </main>
-        <GeminiChatbot />
+        {!isPresentation && <GeminiChatbot />}
       </div>
     </ProtectedRoute>
   );
@@ -82,12 +114,15 @@ const AppContent: React.FC = () => {
 
 // ─── Root App ─────────────────────────────────────────────────
 export const App: React.FC = () => {
+  const [isPresentation, setPresentation] = React.useState(false);
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Router>
-          <AppContent />
-        </Router>
+        <PresentationContext.Provider value={{ isPresentation, setPresentation }}>
+          <Router>
+            <AppContent />
+          </Router>
+        </PresentationContext.Provider>
       </AuthProvider>
     </ThemeProvider>
   );

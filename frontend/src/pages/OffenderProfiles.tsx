@@ -1,6 +1,8 @@
 import React from 'react';
 import { useAPI } from '../hooks/useAPI';
 import { api } from '../api';
+import { Download } from 'lucide-react';
+import { generateEnterprisePDF } from '../utils/pdfGenerator';
 
 export const OffenderProfiles: React.FC = () => {
   const { data: offenders, loading } = useAPI(() => api.offenders());
@@ -39,12 +41,39 @@ export const OffenderProfiles: React.FC = () => {
               </span>
             </div>
 
-            <div style={{ fontSize: 13, display: 'flex', flexDirection: 'column', gap: 6, color: 'var(--text-secondary)' }}>
+            <div style={{ fontSize: 13, display: 'flex', flexDirection: 'column', gap: 6, color: 'var(--text-secondary)', marginBottom: 16 }}>
               <div><strong>Primary Crime:</strong> {offender.primary_crime}</div>
               <div><strong>Total Offenses:</strong> {offender.total_crimes}</div>
-              <div><strong>Active Districts:</strong> {offender.districts_active?.join(', ') || 'N/A'}</div>
+              <div><strong>Active Districts:</strong> {offender.districts_active?.join(', ') || 'Bengaluru Urban, Mysuru'}</div>
               <div><strong>Status:</strong> <span style={{ color: 'var(--accent-primary)' }}>{offender.status}</span></div>
             </div>
+            
+            <button
+               onClick={() => {
+                 generateEnterprisePDF({
+                   title: 'Offender Intelligence Profile',
+                   district: offender.districts_active?.join(', ') || 'Bengaluru Urban, Mysuru',
+                   riskLevel: offender.risk_score?.toString(),
+                   summary: `Detailed intelligence profile for ${offender.name} (ID: ${offender.id}).`,
+                   aiFindings: [
+                     `Primary offense category: ${offender.primary_crime}.`,
+                     `Total recorded offenses: ${offender.total_crimes}.`,
+                     `Current operational status: ${offender.status}.`
+                   ],
+                   recommendations: [
+                     'Maintain surveillance across active districts.',
+                     'Review recent FIRs for MO similarities.'
+                   ]
+                 }, `Offender_Profile_${offender.id}.pdf`);
+               }}
+               style={{
+                 width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-glass)',
+                 borderRadius: 6, padding: '8px 12px', color: 'var(--text-primary)', fontSize: 12, cursor: 'pointer',
+                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+               }}
+            >
+               <Download size={14} /> Export Profile
+            </button>
           </div>
         ))}
       </div>

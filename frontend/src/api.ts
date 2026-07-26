@@ -34,6 +34,10 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt, district, api_key: apiKey }),
     }).then(res => res.json()),
+  sociological:  ()                                        => fetchJSON<any>('/sociological'),
+  evidence:      ()                                        => fetchJSON<any[]>('/evidence'),
+  reports:       ()                                        => fetchJSON<any[]>('/reports'),
+  get:           (path: string, filters?: Record<string, any>) => fetchJSON<any>(path, filters),
 };
 
 export function getRiskColor(score: number): string {
