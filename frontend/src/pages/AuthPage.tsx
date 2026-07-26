@@ -1,41 +1,24 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
+import { useAuth, Role } from '../context/AuthContext';
 import { PoliceBadge } from '../components/PoliceBadge';
 
 type AuthMode = 'login' | 'register';
-type AuthMethod = 'firebase' | 'normal';
 
 export const AuthPage: React.FC = () => {
   const navigate = useNavigate();
-  const { loginWithFirebase, loginWithGoogle, registerWithFirebase, loginWithNormal, registerWithNormal, error, clearError } = useAuth();
+  const { login, register, error, clearError } = useAuth();
 
   const [mode, setMode] = useState<AuthMode>('login');
-  const [method, setMethod] = useState<AuthMethod>('firebase');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [role, setRole] = useState<Role>('Police Officer');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const displayError = localError || error;
-
-  const handleGoogleLogin = async () => {
-    clearError();
-    setLocalError(null);
-    setGoogleLoading(true);
-    try {
-      await loginWithGoogle();
-      navigate('/dashboard');
-    } catch (err: any) {
-      // error set in context
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,18 +40,10 @@ export const AuthPage: React.FC = () => {
 
     setLoading(true);
     try {
-      if (method === 'firebase') {
-        if (mode === 'login') {
-          await loginWithFirebase(email, password);
-        } else {
-          await registerWithFirebase(email, password, name);
-        }
+      if (mode === 'login') {
+        await login(email, password);
       } else {
-        if (mode === 'login') {
-          await loginWithNormal(email, password);
-        } else {
-          await registerWithNormal(email, password, name);
-        }
+        await register(email, password, name, role);
       }
       navigate('/dashboard');
     } catch (err: any) {
@@ -85,6 +60,7 @@ export const AuthPage: React.FC = () => {
     setEmail('');
     setPassword('');
     setName('');
+    setRole('Police Officer');
   };
 
   return (
@@ -189,95 +165,6 @@ export const AuthPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Google Sign-In (Firebase) Button */}
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            disabled={googleLoading || loading}
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              marginBottom: 20,
-              borderRadius: 12,
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              background: 'rgba(255, 255, 255, 0.07)',
-              color: '#ffffff',
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: googleLoading || loading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 12,
-              transition: 'all 0.2s ease',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.2)',
-            }}
-            onMouseEnter={e => { if (!googleLoading && !loading) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)'; }}
-            onMouseLeave={e => { if (!googleLoading && !loading) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)'; }}
-          >
-            {googleLoading ? (
-              <>
-                <span style={{ display: 'inline-block', width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                <span>Signing in with Google...</span>
-              </>
-            ) : (
-              <>
-                <svg width="18" height="18" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                </svg>
-                <span>Continue with Google</span>
-              </>
-            )}
-          </button>
-
-          {/* Divider */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-            <div style={{ flex: 1, height: 1, background: 'rgba(56, 189, 248, 0.15)' }} />
-            <span style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              or email sign in
-            </span>
-            <div style={{ flex: 1, height: 1, background: 'rgba(56, 189, 248, 0.15)' }} />
-          </div>
-
-          {/* Auth method selector */}
-          <div style={{ marginBottom: 24 }}>
-            <label style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)', marginBottom: 8, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Authentication Method
-            </label>
-            <div style={{ display: 'flex', gap: 10 }}>
-              {([
-                { value: 'firebase', label: '🔥 Firebase', desc: 'Google Auth' },
-                { value: 'normal', label: '🔑 Standard', desc: 'Local Auth' },
-              ] as { value: AuthMethod; label: string; desc: string }[]).map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => { setMethod(opt.value); setLocalError(null); clearError(); }}
-                  style={{
-                    flex: 1, padding: '10px 12px', cursor: 'pointer',
-                    borderRadius: 10, fontSize: 13, fontWeight: 600,
-                    transition: 'all 0.2s ease',
-                    background: method === opt.value
-                      ? 'rgba(59,130,246,0.15)'
-                      : 'rgba(9,14,26,0.6)',
-                    color: method === opt.value ? 'var(--accent-info)' : 'var(--text-muted)',
-                    border: method === opt.value
-                      ? '1px solid rgba(59,130,246,0.4)'
-                      : '1px solid rgba(56,189,248,0.1)',
-                    boxShadow: method === opt.value ? '0 0 16px rgba(59,130,246,0.15)' : 'none',
-                    textAlign: 'center',
-                  }}
-                >
-                  <div>{opt.label}</div>
-                  <div style={{ fontSize: 11, fontWeight: 400, opacity: 0.7, marginTop: 2 }}>{opt.desc}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Error banner */}
           {displayError && (
             <div style={{
@@ -307,6 +194,24 @@ export const AuthPage: React.FC = () => {
                   onFocus={e => Object.assign(e.target.style, inputFocusStyle)}
                   onBlur={e => Object.assign(e.target.style, inputStyle)}
                 />
+              </div>
+            )}
+
+            {/* Role (register only) */}
+            {mode === 'register' && (
+              <div>
+                <label style={labelStyle}>Role</label>
+                <select
+                  value={role}
+                  onChange={e => setRole(e.target.value as Role)}
+                  style={{ ...inputStyle, cursor: 'pointer', appearance: 'none', backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23475569%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px top 50%', backgroundSize: '10px auto' }}
+                  onFocus={e => Object.assign(e.target.style, inputFocusStyle)}
+                  onBlur={e => Object.assign(e.target.style, inputStyle)}
+                >
+                  <option value="Admin">Admin</option>
+                  <option value="Police Officer">Police Officer</option>
+                  <option value="Crime Analyst">Crime Analyst</option>
+                </select>
               </div>
             )}
 
@@ -398,7 +303,7 @@ export const AuthPage: React.FC = () => {
 
         {/* Footer note */}
         <p className="glass-reveal" style={{ animationDelay: '0.3s', textAlign: 'center', marginTop: 20, fontSize: 12, color: 'var(--text-muted)' }}>
-          🔒 Secured connection · Karnataka State Police © 2026
+          🔒 Secured offline connection · Karnataka State Police
         </p>
       </div>
 

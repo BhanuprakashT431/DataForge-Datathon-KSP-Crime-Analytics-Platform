@@ -1,38 +1,25 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signInWithPopup,
-  GoogleAuthProvider,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  updateProfile
-} from 'firebase/auth';
-import { auth } from '../firebase';
+
+export type Role = 'Admin' | 'Police Officer' | 'Crime Analyst';
 
 export interface User {
   uid: string;
   email: string;
   name: string;
-  method: 'normal' | 'firebase';
+  role: Role;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
-  loginWithFirebase: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
-  registerWithFirebase: (email: string, password: string, name: string) => Promise<void>;
-  loginWithNormal: (email: string, password: string) => Promise<void>;
-  registerWithNormal: (email: string, password: string, name: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, name: string, role: Role) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const API_BASE = 'http://localhost:8000/api';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -42,155 +29,104 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Clear errors helper
   const clearError = () => setError(null);
 
-  // Initialize Auth
-  useEffect(() => {
-    // 1. Listen to Firebase auth changes
-    const unsubscribeFirebase = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        setUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email || '',
-          name: firebaseUser.displayName || 'KSP Officer (FB)',
-          method: 'firebase',
-        });
-        setLoading(false);
-      } else {
-        // If no active Firebase user, check if we have a saved normal login
-        const savedNormalUser = localStorage.getItem('ksp-normal-user');
-        if (savedNormalUser) {
-          try {
-            setUser(JSON.parse(savedNormalUser));
-          } catch (e) {
-            localStorage.removeItem('ksp-normal-user');
-          }
-        } else {
-          setUser(null);
-        }
-        setLoading(false);
-      }
-    });
+  // Default Mock User
+  const DEFAULT_USER = {
+    uid: 'admin-001',
+    email: 'admin@ksp.gov.in',
+    password: 'password123',
+    name: 'Admin Director',
+    role: 'Admin' as Role
+  };
 
-    return () => unsubscribeFirebase();
+  // Initialize Auth from LocalStorage on mount
+  useEffect(() => {
+    // Seed 1 default mock login if none exists
+    if (!localStorage.getItem('ksp-mock-users')) {
+      localStorage.setItem('ksp-mock-users', JSON.stringify([DEFAULT_USER]));
+    }
+
+    const savedUser = localStorage.getItem('ksp-active-user');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (e) {
+        localStorage.removeItem('ksp-active-user');
+      }
+    }
+    setLoading(false);
   }, []);
 
-  // Login with Firebase
-  const loginWithFirebase = async (email: string, password: string) => {
+  // Login with Local Storage
+  const login = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
     try {
-      localStorage.removeItem('ksp-normal-user');
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (err: any) {
-      setError(err.message || 'Firebase login failed.');
-      setLoading(false);
-      throw err;
-    }
-  };
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 800));
 
-  // Login with Google (Firebase)
-  const loginWithGoogle = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      localStorage.removeItem('ksp-normal-user');
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (err: any) {
-      setError(err.message || 'Google sign-in failed.');
-      setLoading(false);
-      throw err;
-    }
-  };
+      const storedUsersRaw = localStorage.getItem('ksp-mock-users');
+      const users: any[] = storedUsersRaw ? JSON.parse(storedUsersRaw) : [];
 
-  // Register with Firebase
-  const registerWithFirebase = async (email: string, password: string, name: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      localStorage.removeItem('ksp-normal-user');
-      const cred = await createUserWithEmailAndPassword(auth, email, password);
-      if (cred.user) {
-        await updateProfile(cred.user, { displayName: name });
-        setUser({
-          uid: cred.user.uid,
-          email: cred.user.email || '',
-          name: name,
-          method: 'firebase',
-        });
+      const foundUser = users.find(u => u.email === email && u.password === password);
+      
+      if (!foundUser) {
+        throw new Error('Wrong email or password. Please register first if you do not have an account.');
       }
-    } catch (err: any) {
-      setError(err.message || 'Firebase registration failed.');
-      setLoading(false);
-      throw err;
-    }
-  };
 
-  // Login with Normal backend
-  const loginWithNormal = async (email: string, password: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await firebaseSignOut(auth);
-      
-      const response = await fetch(`${API_BASE}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      
-      if (!response.ok) {
-        const detail = await response.json().then(d => d.detail).catch(() => 'Login failed');
-        throw new Error(detail);
-      }
-      
-      const data = await response.json();
-      const normalUser: User = {
-        uid: data.user.uid,
-        email: data.user.email,
-        name: data.user.name,
-        method: 'normal',
+      const activeUser: User = {
+        uid: foundUser.uid,
+        email: foundUser.email,
+        name: foundUser.name,
+        role: foundUser.role,
       };
-      
-      localStorage.setItem('ksp-normal-user', JSON.stringify(normalUser));
-      setUser(normalUser);
+
+      localStorage.setItem('ksp-active-user', JSON.stringify(activeUser));
+      setUser(activeUser);
     } catch (err: any) {
-      setError(err.message || 'Credentials login failed.');
+      setError(err.message || 'Login failed.');
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Register with Normal backend
-  const registerWithNormal = async (email: string, password: string, name: string) => {
+  // Register with Local Storage
+  const register = async (email: string, password: string, name: string, role: Role) => {
     setLoading(true);
     setError(null);
     try {
-      await firebaseSignOut(auth);
-      
-      const response = await fetch(`${API_BASE}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name }),
-      });
-      
-      if (!response.ok) {
-        const detail = await response.json().then(d => d.detail).catch(() => 'Registration failed');
-        throw new Error(detail);
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const storedUsersRaw = localStorage.getItem('ksp-mock-users');
+      const users: any[] = storedUsersRaw ? JSON.parse(storedUsersRaw) : [];
+
+      if (users.find(u => u.email === email)) {
+        throw new Error('An account with this email already exists.');
       }
-      
-      const data = await response.json();
-      const normalUser: User = {
-        uid: data.user.uid,
-        email: data.user.email,
-        name: data.user.name,
-        method: 'normal',
+
+      const newUser = {
+        uid: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
+        email,
+        password,
+        name,
+        role,
       };
-      
-      localStorage.setItem('ksp-normal-user', JSON.stringify(normalUser));
-      setUser(normalUser);
+
+      users.push(newUser);
+      localStorage.setItem('ksp-mock-users', JSON.stringify(users));
+
+      const activeUser: User = {
+        uid: newUser.uid,
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role,
+      };
+
+      localStorage.setItem('ksp-active-user', JSON.stringify(activeUser));
+      setUser(activeUser);
     } catch (err: any) {
-      setError(err.message || 'Credentials registration failed.');
+      setError(err.message || 'Registration failed.');
       throw err;
     } finally {
       setLoading(false);
@@ -201,8 +137,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     setLoading(true);
     try {
-      localStorage.removeItem('ksp-normal-user');
-      await firebaseSignOut(auth);
+      await new Promise(resolve => setTimeout(resolve, 400));
+      localStorage.removeItem('ksp-active-user');
       setUser(null);
     } catch (err: any) {
       setError(err.message || 'Logout failed.');
@@ -217,11 +153,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         loading,
         error,
-        loginWithFirebase,
-        loginWithGoogle,
-        registerWithFirebase,
-        loginWithNormal,
-        registerWithNormal,
+        login,
+        register,
         logout,
         clearError,
       }}
@@ -238,3 +171,4 @@ export const useAuth = () => {
   }
   return context;
 };
+
