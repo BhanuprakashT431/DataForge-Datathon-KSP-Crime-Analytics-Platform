@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { MapIcon, Clock, Target, AlertTriangle, Shield, User, Camera, FileText, Brain, Download, ChevronRight, Activity } from 'lucide-react';
 import { generateEnterprisePDF } from '../utils/pdfGenerator';
+import { HeroBackground } from '../components/HeroBackground';
 
 const KARNATAKA_CENTER: [number, number] = [15.3173, 75.7139];
 
@@ -58,6 +59,7 @@ const villageIcon = createIcon('🏘️', '#ec4899');
 
 export const GeospatialMap: React.FC = () => {
   const [geojsonData, setGeojsonData] = useState<any>(null);
+  const [indiaGeojsonData, setIndiaGeojsonData] = useState<any>(null);
   const [hierarchyData, setHierarchyData] = useState<any>(null);
   const [geoDataError, setGeoDataError] = useState(false);
   
@@ -75,11 +77,13 @@ export const GeospatialMap: React.FC = () => {
   useEffect(() => {
     Promise.all([
       fetch('/data/karnataka_districts.geojson').then(res => res.json()),
-      fetch('/data/karnataka_hierarchy.json').then(res => res.json())
+      fetch('/data/karnataka_hierarchy.json').then(res => res.json()),
+      fetch('/data/india_states.geojson').then(res => res.json()).catch(() => null)
     ])
-    .then(([geojson, hierarchy]) => {
+    .then(([geojson, hierarchy, indiaGeojson]) => {
       setGeojsonData(geojson);
       setHierarchyData(hierarchy);
+      setIndiaGeojsonData(indiaGeojson);
     })
     .catch(err => {
       console.error(err);
@@ -125,8 +129,12 @@ export const GeospatialMap: React.FC = () => {
   const districtsList = Object.keys(hierarchyData).sort();
 
   return (
-    <div style={{ position: 'relative', height: 'calc(100vh - 64px)', width: '100%', overflow: 'hidden' }}>
+    <div style={{ position: 'relative', height: 'calc(100vh - 64px)', width: '100%', overflow: 'hidden', background: '#050a14' }}>
       
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, opacity: isLiveMode ? 1 : 0.4, transition: 'opacity 0.5s' }}>
+        <HeroBackground />
+      </div>
+
       <style>
         {`
           .animated-route {
@@ -259,8 +267,8 @@ export const GeospatialMap: React.FC = () => {
       {/* Main Map Container */}
       <MapContainer 
         center={KARNATAKA_CENTER} 
-        zoom={7} 
-        style={{ height: '100%', width: '100%', background: isLiveMode ? 'rgba(5, 10, 20, 0.3)' : '#050a14', zIndex: 1 }} // transparent in live mode
+        zoom={6.5} 
+        style={{ height: '100%', width: '100%', background: 'transparent', zIndex: 1 }}
         zoomControl={false}
       >
         <MapController 
@@ -270,6 +278,23 @@ export const GeospatialMap: React.FC = () => {
            geojsonData={geojsonData} 
            hierarchyData={hierarchyData}
         />
+
+        {/* India Base Map */}
+        {indiaGeojsonData && (
+          <GeoJSON
+            data={indiaGeojsonData}
+            style={(feature: any) => {
+              const stateName = feature.properties.NAME_1 || feature.properties.st_nm;
+              const isKarnataka = stateName === 'Karnataka';
+              return {
+                fillColor: isKarnataka ? 'transparent' : '#020617',
+                weight: isKarnataka ? 0 : 1,
+                color: 'rgba(255,255,255,0.1)',
+                fillOpacity: isKarnataka ? 0 : 0.95
+              };
+            }}
+          />
+        )}
         
         {/* Karnataka District Polygons */}
         <GeoJSON
