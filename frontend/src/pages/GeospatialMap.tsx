@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { MapContainer, Popup, GeoJSON, useMap, Marker, CircleMarker } from 'react-leaflet';
+import { MapContainer, Popup, GeoJSON, useMap, Marker, CircleMarker, Polyline } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { MapIcon, Clock, Target, AlertTriangle, Shield, User, Camera, FileText, Brain, Download, ChevronRight } from 'lucide-react';
+import { MapIcon, Clock, Target, AlertTriangle, Shield, User, Camera, FileText, Brain, Download, ChevronRight, Activity } from 'lucide-react';
 import { generateEnterprisePDF } from '../utils/pdfGenerator';
 
 const KARNATAKA_CENTER: [number, number] = [15.3173, 75.7139];
@@ -70,6 +70,7 @@ export const GeospatialMap: React.FC = () => {
   const [showHotspots, setShowHotspots] = useState(true);
   const [showStations, setShowStations] = useState(true);
   const [showAssets, setShowAssets] = useState(true);
+  const [isLiveMode, setIsLiveMode] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -126,6 +127,22 @@ export const GeospatialMap: React.FC = () => {
   return (
     <div style={{ position: 'relative', height: 'calc(100vh - 64px)', width: '100%', overflow: 'hidden' }}>
       
+      <style>
+        {`
+          .animated-route {
+            stroke-dasharray: 10, 15;
+            animation: dashAnim 3s linear infinite;
+          }
+          .animated-route-critical {
+            stroke-dasharray: 5, 10;
+            animation: dashAnim 1.5s linear infinite;
+          }
+          @keyframes dashAnim {
+            to { stroke-dashoffset: -50; }
+          }
+        `}
+      </style>
+
       {/* 1. Top Control Panel */}
       <div style={{
         position: 'absolute', top: 16, left: 16, right: 16, zIndex: 1000,
@@ -133,8 +150,9 @@ export const GeospatialMap: React.FC = () => {
         pointerEvents: 'none'
       }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, pointerEvents: 'auto' }}>
-           <div className="glass-card" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, minWidth: 400 }}>
-             <MapIcon size={20} color="var(--accent-primary)" />
+           <div style={{ display: 'flex', gap: 12 }}>
+             <div className="glass-card" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, minWidth: 400 }}>
+               <MapIcon size={20} color="var(--accent-primary)" />
              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600 }}>
                 <span style={{ cursor: 'pointer', color: !selectedDistrict ? 'var(--accent-primary)' : 'var(--text-secondary)' }} 
                       onClick={() => { setSelectedDistrict(null); setSelectedTaluk(null); setSelectedVillage(null); setSelectedEntity(null); }}>
@@ -168,6 +186,29 @@ export const GeospatialMap: React.FC = () => {
                   </>
                 )}
              </div>
+           </div>
+           
+           <button 
+             onClick={() => setIsLiveMode(!isLiveMode)}
+             style={{
+                background: isLiveMode ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${isLiveMode ? 'rgba(239, 68, 68, 0.4)' : 'rgba(255,255,255,0.1)'}`,
+                color: isLiveMode ? '#ef4444' : 'var(--text-secondary)',
+                padding: '0 20px',
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                backdropFilter: 'blur(10px)'
+             }}
+           >
+              <Activity size={16} />
+              {isLiveMode ? '● LIVE THREAT FEED ACTIVE' : 'ENABLE LIVE FEED'}
+           </button>
            </div>
 
            {/* District Dropdown */}
@@ -219,7 +260,7 @@ export const GeospatialMap: React.FC = () => {
       <MapContainer 
         center={KARNATAKA_CENTER} 
         zoom={7} 
-        style={{ height: '100%', width: '100%', background: '#050a14' }} // Very dark background, no tiles
+        style={{ height: '100%', width: '100%', background: isLiveMode ? 'rgba(5, 10, 20, 0.3)' : '#050a14', zIndex: 1 }} // transparent in live mode
         zoomControl={false}
       >
         <MapController 
@@ -338,6 +379,37 @@ export const GeospatialMap: React.FC = () => {
               })()}
            </MarkerClusterGroup>
         )}
+
+         {/* Live Network Routes (Shown in Live Mode) */}
+         {isLiveMode && (
+            <>
+              {Object.entries(hierarchyData).map(([dName, dData]: any) => {
+                // If a district is selected, only show routes within that district
+                if (selectedDistrict && selectedDistrict !== dName) return null;
+                
+                return Object.entries(dData.taluks).map(([tName, tData]: any) => {
+                  // Connect Taluk to District Center
+                  const routes = [];
+                  if (!selectedTaluk || selectedTaluk === tName) {
+                    const isCritical = tData.risk_score > 75;
+                    routes.push(
+                      <Polyline
+                        key={`route-${dName}-${tName}`}
+                        positions={[[dData.lat, dData.lon], [tData.lat, tData.lon]]}
+                        pathOptions={{
+                          color: isCritical ? '#ef4444' : '#3b82f6',
+                          weight: isCritical ? 2 : 1,
+                          opacity: 0.6,
+                          className: isCritical ? 'animated-route-critical' : 'animated-route'
+                        }}
+                      />
+                    );
+                  }
+                  return routes;
+                });
+              })}
+            </>
+         )}
       </MapContainer>
 
       {/* Intelligence Drill-Down Panels */}

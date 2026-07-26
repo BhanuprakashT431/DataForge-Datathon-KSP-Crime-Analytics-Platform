@@ -9,12 +9,13 @@ export const HeroBackground: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let width = canvas.width = window.innerWidth;
-    let height = canvas.height = window.innerHeight;
+    const parent = canvas.parentElement || document.body;
+    let width = canvas.width = parent.clientWidth;
+    let height = canvas.height = parent.clientHeight;
 
     const handleResize = () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      width = canvas.width = parent.clientWidth;
+      height = canvas.height = parent.clientHeight;
     };
     window.addEventListener('resize', handleResize);
 
