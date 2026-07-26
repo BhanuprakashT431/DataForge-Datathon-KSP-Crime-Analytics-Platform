@@ -30,6 +30,19 @@ async function fetchJSON<T>(path: string, params?: Record<string, string | numbe
         { id: 'FIR-4418/26', title: 'Cyber Fraud Networking', status: 'Under Investigation', district: 'Mysuru' }
       ],
       '/health': { status: 'healthy', latency: 42, active_nodes: 12 },
+      '/districts': [
+        { name: 'Bengaluru Urban', type: 'City Commissionerate' },
+        { name: 'Mysuru', type: 'City Commissionerate' },
+        { name: 'Hubballi-Dharwad', type: 'City Commissionerate' },
+        { name: 'Mangaluru', type: 'City Commissionerate' },
+        { name: 'Belagavi', type: 'District' },
+        { name: 'Kalaburagi', type: 'District' },
+        { name: 'Ballari', type: 'District' },
+        { name: 'Tumakuru', type: 'District' },
+        { name: 'Udupi', type: 'District' },
+        { name: 'Shivamogga', type: 'District' },
+        { name: 'Bengaluru Rural', type: 'District' }
+      ],
       '/crimes': { data: [], total: 0 },
       '/crimes/map-points': [],
       '/hotspots': [
@@ -102,6 +115,8 @@ async function fetchJSON<T>(path: string, params?: Record<string, string | numbe
     
     // For specific dynamic path fallbacks (e.g. /cases/123)
     if (path.startsWith('/cases/')) return { id: path.replace('/cases/', ''), title: 'Investigation Record', status: 'Active' } as unknown as T;
+    if (path.startsWith('/districts/')) return { name: decodeURIComponent(path.replace('/districts/', '')), type: 'District' } as unknown as T;
+    if (path.startsWith('/network/offenders/')) return { id: path.replace('/network/offenders/', ''), name: 'Suspect Profile', risk_score: 85, primary_crime: 'Unknown' } as unknown as T;
     
     return [] as unknown as T;
   }
