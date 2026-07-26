@@ -3,21 +3,11 @@
 const BASE_URL = 'http://localhost:8000/api';
 
 async function fetchJSON<T>(path: string, params?: Record<string, string | number | undefined>): Promise<T> {
-  const url = new URL(`${BASE_URL}${path}`);
-  if (params) {
-    Object.entries(params).forEach(([k, v]) => {
-      if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
-    });
-  }
+  // OFFLINE DATATHON PROTOTYPE MODE:
+  // Skip network calls entirely to avoid CORS, Mixed Content, or missing backend issues on Zoho Catalyst.
+  console.log(`[KSP Datathon Mode] Returning local mock data for ${path}`);
   
-  try {
-    const res = await fetch(url.toString());
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    return await res.json();
-  } catch (err) {
-    // OFFLINE FALLBACK FOR DATATHON PROTOTYPE
-    console.warn(`[KSP Offline Fallback] Using mock data for ${path}`);
-    const mockData: Record<string, any> = {
+  const mockData: Record<string, any> = {
       '/overview': {
         total_firs: 12450,
         active_cases: 3420,
